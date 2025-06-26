@@ -9,11 +9,11 @@ import { Menu } from "lucide-react";
 import WagmiWalletButton from "./wagmi-button";
 
 const navLinks = [
-  { href: "#features", label: "Features" },
+  { href: "/#features", label: "Features" },
   { href: "/interview", label: "AI Interview" },
-  { href: "#how", label: "How It Works" },
-  { href: "#testimonials", label: "Testimonials" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#how", label: "How It Works" },
+  { href: "/#testimonials", label: "Testimonials" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 export default function Navbar() {
