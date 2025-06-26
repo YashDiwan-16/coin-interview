@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { QuestionObjectSchema, QuestionObjectType } from './generate-interview-questions.schema';
 
 const GenerateInterviewQuestionsInputSchema = z.object({
   resumeData: z
@@ -18,11 +19,6 @@ const GenerateInterviewQuestionsInputSchema = z.object({
   numberOfQuestions: z.number().optional().default(5).describe('The desired number of interview questions. Defaults to 5.'),
 });
 export type GenerateInterviewQuestionsInput = z.infer<typeof GenerateInterviewQuestionsInputSchema>;
-
-const QuestionObjectSchema = z.object({
-  question: z.string().describe('The interview question text.'),
-  guidanceLink: z.string().describe('A URL (e.g., Google search) to help understand the question.'),
-});
 
 const GenerateInterviewQuestionsOutputSchema = z.object({
   questions: z.array(QuestionObjectSchema).describe('An array of personalized interview questions, each with text and a guidance link.'),
@@ -60,5 +56,3 @@ const generateInterviewQuestionsFlow = ai.defineFlow(
     return output!;
   }
 );
-
-export type { QuestionObjectSchema };

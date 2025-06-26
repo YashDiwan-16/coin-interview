@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ParseResumeOutput } from '@/ai/flows/parse-resume';
 import { parseResume } from '@/ai/flows/parse-resume';
-import type { GenerateInterviewQuestionsOutput, QuestionObjectSchema } from '@/ai/flows/generate-interview-questions';
+import type { GenerateInterviewQuestionsOutput } from '@/ai/flows/generate-interview-questions';
+import type { QuestionObjectType } from '@/ai/flows/generate-interview-questions.schema';
 import { generateInterviewQuestions } from '@/ai/flows/generate-interview-questions';
 import type { TranscribeAnswerOutput } from '@/ai/flows/transcribe-answer';
 import { transcribeAnswer } from '@/ai/flows/transcribe-answer';
@@ -24,6 +25,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Brain, Mic, Volume2, ChevronRight, RotateCcw, CheckCircle, ListChecks, Info, AlertTriangle, ExternalLink, HelpCircle, Wand2, Video } from 'lucide-react';
+import { InterviewErrorCard } from './InterviewErrorCard';
+import { InterviewAwaitingNumQuestions } from './InterviewAwaitingNumQuestions';
+import { InterviewQuestionsReady } from './InterviewQuestionsReady';
+import { InterviewingCard } from './InterviewingCard';
+import { InterviewQuestionEvaluated } from './InterviewQuestionEvaluated';
+import { InterviewComplete } from './InterviewComplete';
 
 // --- Types ---
 type InterviewStage =
@@ -53,9 +60,9 @@ export default function InterviewPage() {
   const [parsedResumeData, setParsedResumeData] = useState<ParseResumeOutput | null>(null);
   const [parsedResumeString, setParsedResumeString] = useState<string>('');
   const [numberOfQuestions, setNumberOfQuestions] = useState<number>(3);
-  const [generatedQuestions, setGeneratedQuestions] = useState<QuestionObjectSchema[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  
+  const [generatedQuestions, setGeneratedQuestions] = useState<QuestionObjectType[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+
   const [currentRecordedVideoUri, setCurrentRecordedVideoUri] = useState<string | null>(null);
   const [currentTranscribedAnswer, setCurrentTranscribedAnswer] = useState<string | null>(null);
   const [currentEvaluation, setCurrentEvaluation] = useState<EvaluateAnswerOutput | null>(null);
@@ -268,23 +275,7 @@ export default function InterviewPage() {
       return <LoadingIndicator message={loadingMessage} />;
     }
     if (stage === 'ERROR_STATE' && errorMessage) {
-      return (
-        <Card className="w-full max-w-lg mx-auto text-center">
-          <CardHeader>
-            <CardTitle className="text-destructive">Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>An Error Occurred</AlertTitle>
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-            <Button onClick={handleRestart} variant="outline" className="mt-6">
-              <RotateCcw className="mr-2 h-4 w-4" /> Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      );
+      return <InterviewErrorCard errorMessage={errorMessage} handleRestart={handleRestart} />;
     }
 
     switch (stage) {
@@ -292,122 +283,61 @@ export default function InterviewPage() {
         return <ResumeUploader onFileUpload={handleResumeUpload} isLoading={isLoading} />;
       
       case 'AWAITING_NUM_QUESTIONS':
-         return (
-          <Card className="w-full max-w-lg mx-auto text-center shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-center gap-2"><FileText className="h-6 w-6 text-primary" />Resume Parsed!</CardTitle>
-              <CardDescription>We've extracted key information. Now, how many questions would you like?</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {parsedResumeData && (
-                <div className="text-left text-sm space-y-2 bg-muted/50 p-4 rounded-md border">
-                  <p><strong>Skills:</strong> {parsedResumeData.skills.join(', ') || 'Not found'}</p>
-                  <p><strong>Experience Snippet:</strong> {parsedResumeData.workExperience[0]?.substring(0,100) || 'Not found'}...</p>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="num-questions" className="text-left block">Number of Questions (1-20):</Label>
-                <Input
-                  id="num-questions"
-                  type="number"
-                  value={numberOfQuestions}
-                  onChange={(e) => setNumberOfQuestions(parseInt(e.target.value, 10))}
-                  min="1"
-                  max="20"
-                  className="w-full"
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleGenerateQuestions} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Wand2 className="mr-2 h-5 w-5" /> Generate Interview Questions
-              </Button>
-            </CardFooter>
-          </Card>
+        return (
+          <InterviewAwaitingNumQuestions
+            parsedResumeData={parsedResumeData}
+            numberOfQuestions={numberOfQuestions}
+            setNumberOfQuestions={setNumberOfQuestions}
+            handleGenerateQuestions={handleGenerateQuestions}
+            isLoading={isLoading}
+          />
         );
 
       case 'QUESTIONS_READY':
         return (
-          <Card className="w-full max-w-lg mx-auto text-center shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-center gap-2"><CheckCircle className="h-6 w-6 text-green-500" />Questions Generated!</CardTitle>
-              <CardDescription>{generatedQuestions.length} personalized questions are ready for you.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={handleStartInterview} size="lg" className="w-full">
-                <Video className="mr-2 h-5 w-5" /> Start Video Interview
-              </Button>
-            </CardContent>
-          </Card>
+          <InterviewQuestionsReady
+            generatedQuestions={generatedQuestions}
+            handleStartInterview={handleStartInterview}
+          />
         );
 
       case 'INTERVIEWING':
         const currentQuestionObject = generatedQuestions[currentQuestionIndex];
         if (!currentQuestionObject) return <LoadingIndicator message="Loading question..." />;
         return (
-          <Card className="w-full max-w-2xl mx-auto shadow-xl">
-            <CardHeader>
-              <CardTitle>Question {currentQuestionIndex + 1} of {generatedQuestions.length}</CardTitle>
-              <CardDescription className="text-xl py-4 text-foreground leading-relaxed">
-                {currentQuestionObject.question}
-              </CardDescription>
-              <div className="flex flex-col sm:flex-row gap-2 items-start">
-                {speechSynthesisSupported && (
-                  <Button onClick={handleSpeakQuestion} variant="outline" size="sm" className="self-start">
-                    <Volume2 className="mr-2 h-4 w-4" /> Read Aloud
-                  </Button>
-                )}
-                {currentQuestionObject.guidanceLink && (
-                  <Button asChild variant="outline" size="sm" className="self-start">
-                    <a href={currentQuestionObject.guidanceLink} target="_blank" rel="noopener noreferrer">
-                      <HelpCircle className="mr-2 h-4 w-4" /> Get Guidance <ExternalLink className="ml-1 h-3 w-3"/>
-                    </a>
-                  </Button>
-                )}
-              </div>
-               {!speechSynthesisSupported && (
-                <Alert variant="default" className="mt-2 text-sm">
-                  <Info className="h-4 w-4"/>
-                  <AlertDescription>
-                  Text-to-speech is not available in your browser. Please read the question manually.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardHeader>
-            <CardContent>
-              <VideoRecorder onRecordingComplete={handleVideoSubmission} isProcessing={isLoading} />
-            </CardContent>
-          </Card>
+          <InterviewingCard
+            currentQuestionObject={currentQuestionObject}
+            currentQuestionIndex={currentQuestionIndex}
+            generatedQuestions={generatedQuestions}
+            speechSynthesisSupported={speechSynthesisSupported}
+            handleSpeakQuestion={handleSpeakQuestion}
+            handleVideoSubmission={handleVideoSubmission}
+            isLoading={isLoading}
+          />
         );
 
       case 'QUESTION_EVALUATED':
         return (
-          <div className="w-full max-w-2xl mx-auto space-y-6">
-            <AnswerEvaluation 
-              questionText={generatedQuestions[currentQuestionIndex]?.question}
-              transcribedText={currentTranscribedAnswer}
-              evaluation={currentEvaluation?.evaluation ?? null}
-              score={currentEvaluation?.score ?? null}
-              followUpQuestion={currentEvaluation?.followUpQuestion ?? null}
-              expectedAnswerElements={currentEvaluation?.expectedAnswerElements ?? null}
-              suggestedResources={currentEvaluation?.suggestedResources ?? null}
-              videoAnalysis={currentVideoAnalysis}
-            />
-            <Button onClick={handleNextQuestion} size="lg" className="w-full">
-              {currentQuestionIndex < generatedQuestions.length - 1 ? 'Next Question' : 'Finish Interview'}
-              <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
+          <InterviewQuestionEvaluated
+            questionText={generatedQuestions[currentQuestionIndex]?.question}
+            transcribedText={currentTranscribedAnswer}
+            evaluation={currentEvaluation?.evaluation ?? null}
+            score={currentEvaluation?.score ?? null}
+            followUpQuestion={currentEvaluation?.followUpQuestion ?? null}
+            expectedAnswerElements={currentEvaluation?.expectedAnswerElements ?? null}
+            suggestedResources={currentEvaluation?.suggestedResources ?? null}
+            videoAnalysis={currentVideoAnalysis}
+            handleNextQuestion={handleNextQuestion}
+            isLastQuestion={currentQuestionIndex >= generatedQuestions.length - 1}
+          />
         );
       
       case 'INTERVIEW_COMPLETE':
         return (
-          <div className="w-full max-w-3xl mx-auto space-y-6">
-            <InterviewSummary interviewData={interviewLog} />
-            <Button onClick={handleRestart} variant="outline" size="lg" className="w-full">
-              <RotateCcw className="mr-2 h-5 w-5" /> Start New Interview
-            </Button>
-          </div>
+          <InterviewComplete
+            interviewLog={interviewLog}
+            handleRestart={handleRestart}
+          />
         );
         
       default: // Includes RESUME_PARSING, GENERATING_QUESTIONS, PROCESSING_ANSWER
