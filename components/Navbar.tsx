@@ -1,3 +1,4 @@
+'use client'
 import React from "react";
 import Link from "next/link";
 import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink } from "./ui/navigation-menu";
@@ -5,6 +6,7 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Menu } from "lucide-react";
+import WagmiWalletButton from "./wagmi-button";
 
 const navLinks = [
   { href: "#features", label: "Features" },
@@ -44,13 +46,14 @@ export default function Navbar() {
           </NavigationMenuList>
         </NavigationMenu>
         {/* Desktop CTAs */}
-        <div className="hidden md:flex gap-3">
+        <div className="hidden md:flex gap-3 items-center">
           <Button asChild variant="secondary" className="bg-green-500 hover:bg-green-600 text-white font-bold shadow-lg">
             <Link href="#">Try on Telegram</Link>
           </Button>
           <Button asChild variant="default" className="bg-white hover:bg-green-100 text-green-700 font-bold shadow-lg border border-green-400">
             <Link href="#">Get Feedback</Link>
           </Button>
+          <WagmiWalletButton />
         </div>
         {/* Mobile Nav */}
         <div className="md:hidden flex items-center">
@@ -89,6 +92,9 @@ export default function Navbar() {
                   <Button asChild variant="default" className="bg-white hover:bg-green-100 text-green-700 font-bold border border-green-400">
                     <Link href="#">Get Feedback</Link>
                   </Button>
+                  <div className="mt-2">
+                    <WagmiWalletButton />
+                  </div>
                 </div>
               </div>
             </SheetContent>
