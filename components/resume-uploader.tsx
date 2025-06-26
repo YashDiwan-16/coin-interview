@@ -46,7 +46,7 @@ export function ResumeUploader({ onFileUpload, isLoading }: ResumeUploaderProps)
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6 p-2">
+    <div className="w-full max-w-md mx-auto space-y-6 p-2 bg-black border border-green-500/40 rounded-xl shadow-lg">
       <ResumeUploaderHeader />
       <ResumeUploaderFileInput selectedFile={selectedFile} isLoading={isLoading} handleFileChange={handleFileChange} />
       <ResumeUploaderButton isLoading={isLoading} selectedFile={selectedFile} handleSubmit={handleSubmit} />

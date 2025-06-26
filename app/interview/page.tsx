@@ -367,13 +367,10 @@ export default function InterviewPage() {
           Practice real interview questions, get instant feedback, and level up your career with your personal AI coach.
         </p>
       </div>
-      <main className="flex-grow container mx-auto px-4 py-8 md:py-12 flex items-center justify-center">
-        <div className="w-full">
-          {/* All content is wrapped in a glassy card for consistency */}
-          <div className="glass max-w-3xl mx-auto p-6 md:p-10 rounded-2xl border border-green-500/20 shadow-2xl card-transition">
-            {renderContent()}
-          </div>
-        </div>
+      <main className="flex-grow flex items-center justify-center px-0 py-8 md:py-12">
+        
+          {renderContent()}
+       
       </main>
     </div>
   );
